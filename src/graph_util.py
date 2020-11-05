@@ -1,5 +1,5 @@
 import pandas as pd
-import seaborn as sns
+#import seaborn as sns
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -191,10 +191,10 @@ def plot_heatmap_prob(matrix, log_scale=False, ax=None, show=False,
                  xticks_maj_freq=None, xticks_min_freq=None, yticks_maj_freq=None, yticks_min_freq=None):
     if ax is None:
         fig, ax = plt.subplots()
-    if log_scale:
-        sns.heatmap(matrix.apply(lambda x: x+1), norm=LogNorm(vmin=1, vmax=matrix.max().max()), ax=ax)
-    else:
-        sns.heatmap(matrix, ax=ax, vmin=vmin, vmax=vmax, cmap=cmap, mask = matrix.isna(), cbar_kws={'label': cbar_label}) # TODO: allow customization of vmin, vmax
+  #  if log_scale:
+   #     sns.heatmap(matrix.apply(lambda x: x+1), norm=LogNorm(vmin=1, vmax=matrix.max().max()), ax=ax)
+    #else:
+     #   sns.heatmap(matrix, ax=ax, vmin=vmin, vmax=vmax, cmap=cmap, mask = matrix.isna(), cbar_kws={'label': cbar_label}) # TODO: allow customization of vmin, vmax
         ax.set_facecolor("#8ff7e1")
 
     # TODO: Support values in cell display option
@@ -212,10 +212,10 @@ def co_occurence_heatmap(attacks, keys, show_numbers=False):
     if(len(keys) != 2):
         raise Exception('Only 2 keys are allowed for co_occurence_heatmap')
     co_occurence_matrix = pd.crosstab(attacks[keys[0]], attacks[keys[1]], dropna=False)
-    if show_numbers:
-        sns.heatmap(co_occurence_matrix, annot=True, fmt="d", linewidths=.1)
-    else:
-        sns.heatmap(co_occurence_matrix)
+    #if show_numbers:
+     #   sns.heatmap(co_occurence_matrix, annot=True, fmt="d", linewidths=.1)
+    #else:
+     #   sns.heatmap(co_occurence_matrix)
     plt.gca().invert_yaxis()    
     #plt.show()
 

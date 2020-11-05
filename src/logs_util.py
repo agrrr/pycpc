@@ -199,15 +199,15 @@ class LogFile:
             if(len(lines) < 1):
                 self.Empty = True
                 self.df = pd.DataFrame()
-                print(f'\nempty file: {self.filename}')
+                #print(f'\nempty file: {self.filename}')
                 return
-            print(f'\n{len(lines)} lines in {self.filename}')
+            #print(f'\n{len(lines)} lines in {self.filename}')
             dfs = []
             drop_count = 0
             for i, line in enumerate(lines):
                 line = Logline(line, attack_params_keys, write_data_lst, self.logfile_hash, i)
                 if line.is_dropped:
-                    print(f'line {i} dropped. msg: {line.drop_reason}')
+                    #print(f'line {i} dropped. msg: {line.drop_reason}')
                     drop_count += 1
                     continue
                 dfs.append(line.to_frame())
@@ -254,12 +254,15 @@ class LogsParser:
             return
         with Bar("Parsing logs:", max=len(files)) as bar:
             for file in files:
-                log_filename = ProjectPaths.logs_dir / (file.name + '.text')
-                pickle_filename = ProjectPaths.pickles_dir / (file.name + '.pickle')
-                log = LogFile(log_filename)
-                log.to_file(pickle_filename)
-                print(log)
-                bar.next()
+                try:
+                    log_filename = ProjectPaths.logs_dir / (file.name + '.text')
+                    pickle_filename = ProjectPaths.pickles_dir / (file.name + '.pickle')
+                    log = LogFile(log_filename)
+                    log.to_file(pickle_filename)
+                    #print(log)
+                    bar.next()
+                except:
+                    continue
         print('Parsed succsessfuly!')
 
 
@@ -304,10 +307,13 @@ class DataFetcher:
         self.attacks = pd.DataFrame()
         with IncrementalBar('Loading files:', max=len(self.pickle_files)) as bar:
             for filename in self.pickle_files:
-                with open(filename, 'rb') as f:
-                    new_attaks = pickle.load(f)
-                self.attacks = self.attacks.append(new_attaks)
-                bar.next()
+                try:
+                    with open(filename, 'rb') as f:
+                        new_attaks = pickle.load(f)
+                    self.attacks = self.attacks.append(new_attaks)
+                    bar.next()
+                except:
+                    continue
         self.attacks.reset_index(inplace=True, drop=True)
         
         if self.attacks.empty:

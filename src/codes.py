@@ -202,6 +202,28 @@ class PC(Code):
         return redundancy
 
 
+class ADR(Code):
+
+    def __init__(self, k, r, gen: list =None):
+        super().__init__(k, r, name='ADR')
+
+        if gen is None:
+            self.F = ffield.FField(r)
+        else:
+            if not isinstance(gen, list) or len(gen) != r+1 or gen.count(0) + gen.count(1) != len(gen):
+                raise Exception('generator polynom error')
+            gen = binlist2int(gen)
+            self.F = ffield.FField(r, gen, useLUT=0) # create GF(2^r)
+    
+
+    def _encode(self, x): #the incoding func for the address
+
+        X = bitarray2ints(x, self.r) # convert to element in GF(2^r)
+        w = 0
+
+
+        return int2bitarray(w, self.r)
+
 class CPC(Code):
     """
     CPC codes are constructed using smaller ground codes (as specified in the paper).
@@ -230,6 +252,9 @@ class CPC(Code):
             w = self.F.Add(w, redundancy)
         return int2bitarray(w, self.r)
 
+
+def split_bitarray_to_ryot(bitarray:,r):
+    
 
 # test helpers:
 

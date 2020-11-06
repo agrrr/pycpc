@@ -223,22 +223,41 @@ class ADR(Code):
 
     # Todo: to make sure the boundries in the loop
     # Todo: changing the mul_param to 10? x+x^3...?
-    def _encode(self, x):  # the incoding func for the address
-
-        X = bitarray2ints(x, self.r)  # convert to element in GF(2^r)
-        splits_data = [None] * (math.ceil(len(x) / self.r))
-        size_per_part = math.ceil(len(x) / len(splits_data))
-        mul_param = 8  # 8 = x^3
+    def _encode(self, data: bitarray, addr: bitarray):  # the incoding func for the address
+        """
+        the func should get data and address and is implementing the following formula:
+        (x^3+x) + y   =>   (data^3+data) + addr
+        """
+        #X = bitarray2ints(x, self.r)  # convert to element in GF(2^r)
+        splited_data = [None] * (math.ceil(len(data) / self.r))
+        splited_address = [None] * (math.ceil(len(addr) / self.r))
+        r = self.r
         w = 0
-        index = 0
-        for i in splits_data:
+        #x calculation, data calculation
+        for i in splited_data:
+            start = i * r
+            try: #todo: to delete the try-except, no need for the data
+                # x^2
+                splited_data[i] = self.F.Multiply(bitarray2ints(data[start:start + r], data[start:start + r]))
+                # x^3
+                splited_data[i] = self.F.Multiply(splited_data[i], data[start:start + r]) # x^3
+                splited_data[i] = self.F.Add(splited_data[i], data[start:start + r])  # x^3+x
+            except:  # for the last part that may be smaller than 'self.r', need to be padded with 0's
+                #todo: un-nessesary because we take data at the size we want
+                splited_data[i] = self.F.Multiply(bitarray2ints(data[start:len(data)], data[start:len(data)]))
+                splited_data[i] = self.F.Multiply(splited_data[i], data[start:len(data)]) # x^3
+                splited_data[i] = self.F.Add(splited_data[i], data[start:len(data)])  # x^3+x
+                w = self.F.Add(w, splited_data[i])
+
+        # address calculation
+        for i in splited_address:
+            start = i * r
             try:
-                splits_data[i] = self.F.Multiply(bitarray2ints(x[index:size_per_part], mul_param))
-                index += size_per_part
-                w = self.F.Add(w, splits_data[i])
-            except:  # for the last part that may be smaller than 'size_per_part'
-                splits_data[i] = self.F.Multiply(bitarray2ints(x[index:len(x)], mul_param))
-                w = self.F.Add(w, splits_data[i])
+                # x^2
+                splited_address[i] = self.F.Add(addr[start:start + r], splited_data[i])
+            except:  # for the last part that may be smaller than 'self.r', need to be padded with 0's
+                #todo: to pad last part with 0's  and do calculations
+                w = self.F.Add(w, splited_data[i])
 
         return int2bitarray(w, self.r)
 

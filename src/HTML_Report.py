@@ -5,7 +5,7 @@ from pathlib import Path
 import uuid
 import webbrowser
 import pandas as pd
-from logs_util import ProjectPaths
+from src.logs_util import ProjectPaths
 
 class HTML_Report:
     def __init__(self, name, title=None):

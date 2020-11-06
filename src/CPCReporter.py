@@ -1,17 +1,17 @@
 import statistics as stats
-import attacks_filters as filters
-from logs_util import DataFetcher, ParamKeysManager, ProjectPaths
-import graph_util
-from pacific import Pacific
-from HTML_Report import HTML_Report
-import help_strings as strings
-import theoretical_stats
+from src import attacks_filters as filters
+from src.logs_util import DataFetcher, ParamKeysManager, ProjectPaths
+import src.graph_util
+from src.pacific import Pacific
+from src.HTML_Report import HTML_Report
+import src.help_strings as strings
+import src.theoretical_stats
 import pandas as pd
 from itertools import combinations
 import datetime
 from pathlib import Path
 
-from Classificator import Classificator
+from src.Classificator import Classificator
 
 class CPCReporter:
     def __init__(self, cpc=None, name='Report for CPC{cpc}', debug=False):

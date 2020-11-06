@@ -1,5 +1,5 @@
 import pandas as pd, numpy as np
-import attacks_filters as filters
+import src.attacks_filters as filters
 
 class Classificator:
     def __init__(self, attacks, paramkeys, below_margin=-3, above_margin=5, wd_consistent_threshold=0.8, min_tries=3):

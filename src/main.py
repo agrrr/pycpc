@@ -1,4 +1,4 @@
-import CPCReporter
+from src import CPCReporter
 from datetime import datetime
 from itertools import product
 from pprint import pprint
@@ -22,11 +22,9 @@ def main():
 
             report.fetch_files(parse_pickles=True, to_datetime=newlogs, max_files=None) 
             #report.generate_report(general_report=True, specifics_report=12)#making a report
-            
-            combined_report.concat([report.attacks])
             report_attacks[cpc] = report.attacks
         except:
-            print('error in cpc = ',cpc)
+            print('error in cpc = ', cpc)
     print('end')
     print('end')
 

@@ -1,4 +1,4 @@
-from codes import *
+from src.codes import *
 
 
 class Pacific:

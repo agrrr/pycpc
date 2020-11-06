@@ -9,8 +9,10 @@ import numpy as np
 import copy
 from abc import ABC, abstractmethod
 from bitarray import bitarray
+import math
 
 __author__ = "David Peled, Yagel Ashkenazi"
+
 
 def binlist2int(x: list) -> int:
     """
@@ -22,7 +24,7 @@ def binlist2int(x: list) -> int:
     if x.count(0) + x.count(1) != len(x):
         raise Exception('x={} contains non-binary elements'.format(x))
 
-    return int(''.join(np.char.mod('%d',x)),2)
+    return int(''.join(np.char.mod('%d', x)), 2)
 
 
 def bitarray2ints(x: bitarray, r: int) -> int:
@@ -34,7 +36,7 @@ def bitarray2ints(x: bitarray, r: int) -> int:
     if len(x) % r != 0:
         raise Exception('Inconsisntent length')
 
-    return [int(x[i:i+r].to01(), 2) for i in range(0, len(x), r)]
+    return [int(x[i:i + r].to01(), 2) for i in range(0, len(x), r)]
 
 
 def int2bitarray(x: int, l: int) -> bitarray:
@@ -48,7 +50,7 @@ def int2bitarray(x: int, l: int) -> bitarray:
     if x > 2 ** l:
         raise Exception('{x} can not feet in {l} bits'.format(x=x, l=l))
 
-    x_str = ('{0:0' + str(l) + 'b}').format(x) # integer to binary string
+    x_str = ('{0:0' + str(l) + 'b}').format(x)  # integer to binary string
     return bitarray(x_str)
 
 
@@ -56,7 +58,8 @@ class Code(ABC):
     """
     Represents an abstract binary code.
     """
-    def __init__(self, k: int, r: int, name :str =''):
+
+    def __init__(self, k: int, r: int, name: str = ''):
         """
         :param name: code name (str)
         :param k: code dimension (int)
@@ -81,7 +84,7 @@ class Code(ABC):
         return self._encode(x)
 
     @abstractmethod
-    def _encode(self, x: bitarray) -> bitarray: 
+    def _encode(self, x: bitarray) -> bitarray:
         pass
 
     def encode_word(self, x: bitarray) -> bitarray:
@@ -89,7 +92,7 @@ class Code(ABC):
         :param x: word to encode (bitarray of length k)
         :returns: systematic encoding of x (bitarray of length n=k+r).
         """
-        return x + self.encode(x)  
+        return x + self.encode(x)
 
     def check(self, x: bitarray) -> bool:
         """
@@ -100,7 +103,7 @@ class Code(ABC):
             raise Exception('len(x={x})!=n={n}'.format(x=x, n=self.n))
 
         return (self._encode(x[:self.k]) == x[self.k:])
-    
+
     def is_faulty(self, x: bitarray) -> bool:
         return not self.check(x)
 
@@ -111,25 +114,26 @@ class QS(Code):
     Example:
         QS(66, 11) generates a QS code with k=66 and r=11.
     """
-    def __init__(self, k: int,  r: int, gen: list =None):
+
+    def __init__(self, k: int, r: int, gen: list = None):
         super().__init__(k=k, r=r, name='QS')
         s = k / (2.0 * r)
         if int(s) != s:
             raise Exception('QS parameters error: k != 2*s*r')
-        self.s = int(s) # convert double to int.
+        self.s = int(s)  # convert double to int.
         if gen is None:
             self.F = ffield.FField(r)
         else:
-            if not isinstance(gen, list) or len(gen) != r+1 or gen.count(0) + gen.count(1) != len(gen):
+            if not isinstance(gen, list) or len(gen) != r + 1 or gen.count(0) + gen.count(1) != len(gen):
                 raise Exception('generator polynom error')
             gen = binlist2int(gen)
-            self.F = ffield.FField(r, gen, useLUT=0) # create GF(2^r)
+            self.F = ffield.FField(r, gen, useLUT=0)  # create GF(2^r)
 
     def _encode(self, x: bitarray) -> bitarray:
-        X = bitarray2ints(x, self.r) # convert to element in GF(2^r)
+        X = bitarray2ints(x, self.r)  # convert to element in GF(2^r)
         w = 0
-        for i in range(0,self.s):
-            w = self.F.Add(w, self.F.Multiply(X[2*i], X[2*i+1]))
+        for i in range(0, self.s):
+            w = self.F.Add(w, self.F.Multiply(X[2 * i], X[2 * i + 1]))
         return int2bitarray(w, self.r)
 
 
@@ -139,27 +143,28 @@ class TS(Code):
     Example:
         TS(12, 4) generates a TS code with k=12 and r=4.
     """
-    def __init__(self, k: int, r: int, gen: list =None):
+
+    def __init__(self, k: int, r: int, gen: list = None):
         super().__init__(k=k, r=r, name='TS')
         s = (k / r - 1) / 2.0
         if int(s) != s:
             raise Exception('TS parameters error: k != (2*s+1)*r')
-        self.s = int(s)                          # convert double to int.
+        self.s = int(s)  # convert double to int.
         if gen is None:
             self.F = ffield.FField(r)
         else:
-            if not isinstance(gen, list) or len(gen) != r+1 or gen.count(0) + gen.count(1) != len(gen):
+            if not isinstance(gen, list) or len(gen) != r + 1 or gen.count(0) + gen.count(1) != len(gen):
                 raise Exception('generator polynom error')
             gen = binlist2int(gen)
-            self.F = ffield.FField(r, gen, useLUT=0) # create GF(2^r)
+            self.F = ffield.FField(r, gen, useLUT=0)  # create GF(2^r)
 
     def _encode(self, x: bitarray) -> bitarray:
         s = self.s
-        X = bitarray2ints(x,self.r)         # convert to element in GF(2^r)
-        w = self.F.Multiply(X[2*s-2], X[2*s-1])
-        w = self.F.Multiply(w, X[2*s])           # X_(2s-1) * X_(2s) * X_(2s+1)
-        for i in range(0,s-1):
-            w = self.F.Add(w, self.F.Multiply(X[2*i], X[2*i+1]))
+        X = bitarray2ints(x, self.r)  # convert to element in GF(2^r)
+        w = self.F.Multiply(X[2 * s - 2], X[2 * s - 1])
+        w = self.F.Multiply(w, X[2 * s])  # X_(2s-1) * X_(2s) * X_(2s+1)
+        for i in range(0, s - 1):
+            w = self.F.Add(w, self.F.Multiply(X[2 * i], X[2 * i + 1]))
         return int2bitarray(w, self.r)
 
 
@@ -170,24 +175,25 @@ class PC(Code):
     Example:
         PC(9, 6) generates a PC code with k=9, r=6 and the trivial puncturing vector.
     """
-    def __init__(self, k: int, r: int, pv: bitarray =None, gen: list=None):
+
+    def __init__(self, k: int, r: int, pv: bitarray = None, gen: list = None):
         """
         pv: Punching vector. len(P)=k, w(P)=r
         gen: generating polynomial in binary vector form.
         """
         super().__init__(k=k, r=r, name='PC')
         if pv is None:
-            pv = bitarray([0 for _ in range(k-r)] + [1 for _ in range(r)])
-        if pv.count(1) != r or pv.count(0) != k-r:
+            pv = bitarray([0 for _ in range(k - r)] + [1 for _ in range(r)])
+        if pv.count(1) != r or pv.count(0) != k - r:
             raise Exception('{pv} can not be used as punching vector (k={k}, r={r})'.format(pv=pv, k=k, r=r))
         self.PV = pv
         if gen is None:
             self.F = ffield.FField(k)
         else:
-            if not isinstance(gen, list) or len(gen) != k+1 or gen.count(0) + gen.count(1) != len(gen):
+            if not isinstance(gen, list) or len(gen) != k + 1 or gen.count(0) + gen.count(1) != len(gen):
                 raise Exception('generator polynom error')
             gen = binlist2int(gen)
-            self.F = ffield.FField(k, gen, useLUT=0) # create GF(2^k)
+            self.F = ffield.FField(k, gen, useLUT=0)  # create GF(2^k)
 
     def _encode(self, x: bitarray) -> bitarray:
         x = int(x.to01(), 2)
@@ -204,25 +210,38 @@ class PC(Code):
 
 class ADR(Code):
 
-    def __init__(self, k, r, gen: list =None):
+    def __init__(self, k, r, gen: list = None):
         super().__init__(k, r, name='ADR')
 
         if gen is None:
             self.F = ffield.FField(r)
         else:
-            if not isinstance(gen, list) or len(gen) != r+1 or gen.count(0) + gen.count(1) != len(gen):
+            if not isinstance(gen, list) or len(gen) != r + 1 or gen.count(0) + gen.count(1) != len(gen):
                 raise Exception('generator polynom error')
             gen = binlist2int(gen)
-            self.F = ffield.FField(r, gen, useLUT=0) # create GF(2^r)
-    
+            self.F = ffield.FField(r, gen, useLUT=0)  # create GF(2^r)
 
-    def _encode(self, x): #the incoding func for the address
+    # Todo: to make sure the boundries in the loop
+    # Todo: changing the mul_param to 10? x+x^3...?
+    def _encode(self, x):  # the incoding func for the address
 
-        X = bitarray2ints(x, self.r) # convert to element in GF(2^r)
+        X = bitarray2ints(x, self.r)  # convert to element in GF(2^r)
+        splits_data = [None] * (math.ceil(len(x) / self.r))
+        size_per_part = math.ceil(len(x) / len(splits_data))
+        mul_param = 8  # 8 = x^3
         w = 0
-
+        index = 0
+        for i in splits_data:
+            try:
+                splits_data[i] = self.F.Multiply(bitarray2ints(x[index:size_per_part], mul_param))
+                index += size_per_part
+                w = self.F.Add(w, splits_data[i])
+            except:  # for the last part that may be smaller than 'size_per_part'
+                splits_data[i] = self.F.Multiply(bitarray2ints(x[index:len(x)], mul_param))
+                w = self.F.Add(w, splits_data[i])
 
         return int2bitarray(w, self.r)
+
 
 class CPC(Code):
     """
@@ -231,6 +250,7 @@ class CPC(Code):
     Example:
         CPC([QS(66, 11), TS(33, 11), PC(16, 11)]) generates a CPC code with k=66+33+16=115 and r=max(11,11,11)=11.
     """
+
     def __init__(self, code_list: list):
         self._code_list = copy.deepcopy(code_list)
         r = max([c.r for c in code_list])
@@ -246,61 +266,59 @@ class CPC(Code):
         w = 0
         last_k = 0
         for c in self._code_list:
-            redundancy = c.encode(x[last_k:last_k+c.k])
+            redundancy = c.encode(x[last_k:last_k + c.k])
             redundancy = int(redundancy.to01(), 2)
             last_k += c.k
             w = self.F.Add(w, redundancy)
         return int2bitarray(w, self.r)
 
 
-def split_bitarray_to_ryot(bitarray:,r):
-    
-
 # test helpers:
 
 def format_word(w):
     return ' '.join(list(w.to01()))
 
-def test_code(code, amount=2**30):
+
+def test_code(code, amount=2 ** 30):
     print('\n\nTesting', str(code))
     k = code.k
-    for i in range(min(2**k, amount)):
-        x = int2bitarray(i,k) #bitarray(list(np.random.choice([0, 1], size=(k,))))
+    for i in range(min(2 ** k, amount)):
+        x = int2bitarray(i, k)  # bitarray(list(np.random.choice([0, 1], size=(k,))))
         redundancy = code.encode(x)
         print(format_word(x) + ' | ' + format_word(redundancy))
 
-if __name__=='__main__':
-    
+
+if __name__ == '__main__':
     # Test QS
     s = 1
     r = 2
-    k = 2*s*r
-    code = QS(k,r)
+    k = 2 * s * r
+    code = QS(k, r)
     test_code(code)
 
     # Test TS
     s = 1
     r = 2
-    k = (2*s+1)*r
-    code = TS(k,r)
+    k = (2 * s + 1) * r
+    code = TS(k, r)
     test_code(code)
 
     # Test PC
     r = 3
     k = 3
-    code = PC(k,r)
+    code = PC(k, r)
     test_code(code)
 
-    #Test CPC
+    # Test CPC
 
     s_qs = 1
     r_qs = 2
-    k_qs = 2*s_qs*r_qs
-    qs = QS(k_qs,r_qs)
+    k_qs = 2 * s_qs * r_qs
+    qs = QS(k_qs, r_qs)
     test_code(qs)
     r_ts = 3
     k_ts = 3
-    pc = PC(k_ts,r_ts)
+    pc = PC(k_ts, r_ts)
     test_code(pc)
 
     code = CPC([qs, pc])

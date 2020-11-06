@@ -7,8 +7,8 @@ import pandas as pd
 from datetime import datetime
 from pathlib import Path
 
-from pacific import Pacific
-import attacks_filters as filters
+from src.pacific import Pacific
+import src.attacks_filters as filters
 
 import numpy as np
 

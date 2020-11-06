@@ -1,5 +1,5 @@
 import pandas as pd
-from pacific import Pacific
+from src.pacific import Pacific
 from bitarray import bitarray, util as bit_util
 
 

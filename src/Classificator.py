@@ -90,14 +90,3 @@ class Classificator:
 
     def get_write_corrupt_attacks(self):
         return self.valid_attacks[self.valid_attacks['wc fault']]
-
-    
-  
-    
-
-
- 
-
-   
-
-        

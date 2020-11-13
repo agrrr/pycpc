@@ -222,11 +222,10 @@ class ADR(Code):
             self.F = ffield.FField(r, gen, useLUT=0)  # create GF(2^r)
 
     # Todo: to make sure the boundries in the loop
-    # Todo: changing the mul_param to 10? x+x^3...?
     def _encode(self, data: bitarray, addr: bitarray):  # the incoding func for the address
-        """
+        """to make it data:addr
         the func should get data and address and is implementing the following formula:
-        (x^3+x) + y   =>   (data^3+data) + addr """
+        (x^3+x) * y   =>   (data^3+data) * addr """
         splited_data = [None] * (math.ceil(len(data) / self.r))
         r = self.r
         w = 0
@@ -236,14 +235,14 @@ class ADR(Code):
                 data_int = bitarray2ints(data[start:start + r])
                 splited_data[i] = self.F.Multiply(data_int, data_int)  # x^2
                 splited_data[i] = self.F.Multiply(splited_data[i], data_int)  # x^2*x => x^3
-                splited_data[i] = self.F.Add(splited_data[i], data[start:start + r])  # x^3+x
+                splited_data[i] = self.F.Add(splited_data[i], data_int)  # x^3+x
                 adr_int = bitarray2ints(addr[start:start + r])  # raising exception at the last iteration
                 splited_data[i] = self.F.Add(splited_data[i], adr_int)  # (x^3 + x) + y
                 w = self.F.Add(w, splited_data[i]) # xoring the redundencies on field
             except:  # need to be padded with 0's
                 pad_num = self.r-len(addr[start:])
                 # (x^3+x)+ padded y
-                adr_int = bitarray2ints(addr[start:]+(bitarray('0')*pad_num))  # raising exception
+                adr_int = bitarray2ints(addr[start:]+(bitarray('0')*pad_num))
                 splited_data[i] = self.F.Add(splited_data[i], adr_int)
                 w = self.F.Add(w, splited_data[i])
         return int2bitarray(w, self.r)

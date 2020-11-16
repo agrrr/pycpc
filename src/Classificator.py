@@ -32,11 +32,11 @@ class Classificator:
     def _tag_writeshifts(self):
         shifted = pd.merge(
             self.attacks[self.attacks['faulty']][['try_id', 'read_data', 'address']], 
-            self.attacks[['try_id', 'write_data', 'address']].rename(columns={'address':'shifted_address'}), 
-            left_on=['try_id', 'read_data'], right_on=['try_id', 'write_data'])
-        shifted['shift'] = shifted['shifted_address'] - shifted['address']
+            self.attacks[['try_id', 'write_data', 'address']].rename(columns={'address':'original_address'}),
+            left_on=['try_id', 'read_data'], right_on=['try_id', 'write_data'])#shifted_address
+        shifted['shift'] = shifted['original_address'] - shifted['address']
         shifted['is shifted'] = True
-        self.attacks = pd.merge(self.attacks, shifted[['try_id', 'address', 'shift', 'is shifted']], on=['try_id', 'address'], how='outer')
+        self.attacks = pd.merge(self.attacks, shifted[['try_id', 'address','original_address', 'shift', 'is shifted']], on=['try_id', 'address'], how='outer')
         self.attacks['shift'].fillna(np.inf, inplace=True)
         self.attacks['is shifted'].fillna(False, inplace=True)
 
@@ -59,7 +59,7 @@ class Classificator:
         self.attacks.drop(columns=['on_address'])
 
     def _validate_attacks(self):
-        consistent_attacks  = self.attacks[(self.attacks['write_data_consistent_normalized'] > self.wd_consistent_threshold)
+        consistent_attacks = self.attacks[(self.attacks['write_data_consistent_normalized'] > self.wd_consistent_threshold)
                                             & self.attacks['mem_before_consistent_data']]
         self.valid_attacks = filters.filter_not_tested_attacks(consistent_attacks, paramkeys=self.paramkeys, min_tries=self.min_tries)
     

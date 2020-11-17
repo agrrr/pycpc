@@ -46,6 +46,7 @@ def int2bitarray(x: int, l = 10) -> bitarray:
     :returns: binary representation of x with l bits. 
     """
     if not isinstance(x, int) or not isinstance(l, int):
+        return
         raise Exception('Type error')
     if x > 2 ** l:
         raise Exception('{x} can not feet in {l} bits'.format(x=x, l=l))

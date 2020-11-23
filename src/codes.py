@@ -263,9 +263,13 @@ class ADR(Code):
             start = i * r
             try:
                 data_int = bitarray2ints(data[start:start + r],r)[0]
-                splited_data[i] = self.F.Multiply(data_int, data_int)  # x^2
-                splited_data[i] = self.F.Multiply(splited_data[i], data_int)  # x^2*x => x^3
-                splited_data[i] = self.F.Add(splited_data[i], data_int)  # x^3+x
+            except:
+                pad_num = self.r - len(data[start:])
+                data_int = bitarray2ints(data[start:] + (bitarray('0') * pad_num), r)[0]
+            splited_data[i] = self.F.Multiply(data_int, data_int)  # x^2
+            splited_data[i] = self.F.Multiply(splited_data[i], data_int)  # x^2*x => x^3
+            splited_data[i] = self.F.Add(splited_data[i], data_int)  # x^3+x
+            try:
                 adr_int = bitarray2ints(addr[start:start + r],r)[0]  # raising exception at the last iteration
                 splited_data[i] = self.F.Multiply(splited_data[i], adr_int)  # (x^3 + x) * y
                 w = self.F.Add(w, splited_data[i]) # xoring the redundencies on field

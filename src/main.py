@@ -29,6 +29,5 @@ def main():
     print('end')
 #report.attacks[report.attacks['is shifted']==True][['address','index','shift','addr minus idx','Class']]
 
-
 if __name__=='__main__':
     main()

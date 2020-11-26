@@ -76,8 +76,17 @@ def main():
                     #for shifted the data is the same so we collect data once and compute two different red
                     #based on the address, the address is different
                     bin_write_address = code.int2bitarray(int(shift_attacks['original_address'][x]), 10)
+                    
+                    ####### Gilad! ########
                     bin_data = chip.get_data(shift_attacks['write_data'][x])
-                    bin_red = chip.get_red(shift_attacks['write_data'][x])
+                    
+                    #randomize the data and rewrite it in the DB
+                    bin_data = np.random.randint(2, size=len(bin_data))                    
+                    #calculate the new redundancy
+                    bin_red = chip.encode(bin_data)
+                    shift_attacks['write_data'][x] = bin_data + bin_red
+                    ####### Gilad Out! ####
+
                     coded_write_red_address = address_decoder.encode(bin_data, bin_write_address)
                     coded_write_red = coded_write_red_address ^ bin_red
                     bin_full_write_word = bin_write_address + bin_data + coded_write_red
@@ -89,6 +98,7 @@ def main():
                     shift_attacks['write_ad_red'][x] = coded_write_red_address
                     shift_attacks['write_new_full_word'][x] = bin_full_write_word
                     shift_attacks['write_new_red'][x] = coded_write_red
+                    
                     # read side decode
                     bin_read_address = code.int2bitarray(int(shift_attacks['address'][x]), 10)
                     coded_read_red_address = address_decoder.encode(bin_data, bin_read_address)
@@ -96,7 +106,13 @@ def main():
                     bin_full_read_word = bin_read_address + bin_data +  coded_write_red
                     shift_attacks['read_address'][x] = bin_read_address
                     shift_attacks['read_red'][x] = bin_red
+                    
+                    ####### Gilad! ########
+                    #I think this is wrong?
                     shift_attacks['full_read_word'][x] = bin_read_address + bin_data + bin_red
+                    #and this is right?
+                    shift_attacks['full_read_word'][x] = bin_full_read_word
+                    ####### Gilad Out! ####
 
                     shift_attacks['read_new_calculated_ad_red'][x] = coded_read_red_address
                     shift_attacks['read_new_full_word'][x] = bin_read_address + bin_data + coded_write_red
@@ -141,8 +157,15 @@ def main():
                     err_vec = wc_attacks['err_vec'][x] #geting the error vectore
                     #new coded of the oiginal write
                     bin_address = code.int2bitarray(int(wc_attacks['address'][x]), 10)
+
                     bin_write_data = chip.get_data(wc_attacks['write_data'][x])
-                    bin_original_red = chip.get_red(wc_attacks['write_data'][x])
+                    ####### Gilad! ########
+                    #randomize the data and update the DB
+                    bin_write_data              = np.random.randint(2, size=len(bin_write_data))
+                    bin_original_red            = chip.encode(bin_write_data)
+                    wc_attacks['write_data'][x] = bin_write_data + bin_original_red
+                    ####### Gilad out! ####
+                    
                     write_ADR_red = address_decoder.encode(bin_write_data,bin_address)
                     new_write_red_with_ADR = write_ADR_red ^ bin_original_red
                     new_with_ADR_write_word = bin_write_data + new_write_red_with_ADR
@@ -174,6 +197,11 @@ def main():
                     wc_attacks['after_error_ADR_red'][x] = bin_read_red
                     wc_attacks['after_error_correct_red'][x] = new_red_after_err
 
+                    ####### Gilad! ########
+                    #check if the error would be detected by the old encoding
+                    flag = (wc_attacks['read_red'][x] == chip.encode(bin_read_data))
+                    wc_attacks['wc_old_detected'][x] = not flag
+                    ####### Gilad out #####
                     # check success
                     flag = (new_red_after_err == bin_read_red)
                     wc_attacks['wc_new_detected'][x] = not flag

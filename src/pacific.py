@@ -2,7 +2,7 @@ from src.codes import *
 
 
 class Pacific:
-    
+    cpc = [Code] * 11   # 11 CPC instances are implemented in Pacific.
     # The respective generator polynomials for the fields GF(2^k) used in the chip.
     generator_polynomials = {
         4  : [1,0,0,1,1],         # 1+x+x^4
@@ -17,8 +17,6 @@ class Pacific:
         16 : [1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,1]
     }
 
-    cpc = [None] * 11   # 11 CPC instances are implemented in Pacific.
-    
     cpc[0] = CPC([QS(32, 4, gen=generator_polynomials[4])])
     cpc[1] = CPC([TS(12, 4, gen=generator_polynomials[4])])
     cpc[2] = CPC([PC(10, 6, gen=generator_polynomials[10])])
@@ -45,7 +43,6 @@ class Pacific:
 
     cpc[9] = CPC([QS(120, 10, gen=generator_polynomials[10])])
     cpc[10] = CPC([QS(132, 6, gen=generator_polynomials[6])])
-
 
 if __name__ == '__main__':
     for cpc in Pacific.cpc:

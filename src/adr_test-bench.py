@@ -18,7 +18,7 @@ def main():
     #report_attacks = [None]*10
 
     report_attacks = pd.DataFrame()
-    for cpc in range(2,11):
+    for cpc in range(7,11):
         #try:
             report = CPCReporter.CPCReporter(cpc=cpc)
             report.set_params(min_success_prob=0.01
@@ -29,12 +29,9 @@ def main():
                                 , wd_consistent_threshold=0.5)
 
             report.set_sortby(sortby=sort_by)
-
             report.fetch_files(parse_pickles=True, to_datetime=newlogs, max_files=None)
             #report.generate_report(general_report=True, specifics_report=12)#making a report
-            report_attacks.append(report.attacks)#appending rows
-
-
+            #report_attacks.append(report.attacks)#appending rows
             address_decoder = code.ADR(report.cpc.k, report.cpc.r)
             #here we have the attacks data inside the 'report_attacks[]' array
                     #print(report.attacks['Class'].unique())
@@ -71,7 +68,7 @@ def main():
                     #collect and pring read data
                     bin_read_address = code.int2bitarray(int(shift_attacks['address'][x]), 10)
                     bin_read_data = shift_attacks['read_data'][x]
-                    bin_read_red = code.get_red(bin_read_data,report.cpc.r)
+                    bin_read_red = report.cpc.encode(code.get_data(bin_read_data,report.cpc.r))
                     bin_full_read_word = bin_read_address + bin_read_data
                     #lists
                     list_of_read_address.append(bin_read_address)
@@ -221,3 +218,28 @@ def main():
 
 if __name__=='__main__':
     main()
+
+"""
+wc_attacks['full_old_write_word'] 
+wc_attacks['write_address']
+wc_attacks['write_red'] 
+wc_attacks['write_ad_red'] 
+wc_attacks['full_new_write_word']
+wc_attacks['write_red_with_ADR'] = 
+#wc_attacks['write_new_calculated_red'] = 
+
+        
+wc_attacks['full_old_read_word'] 
+wc_attacks['read_red'] 
+
+wc_attacks['full_new_read_word'] 
+wc_attacks['new_read_red'] 
+
+wc_attacks['calculated_address_read_red']
+wc_attacks['calculated_data_read_red']
+wc_attacks['calculated_total_red']
+
+wc_attacks['after_error_ADR_red'] = bitarray
+wc_attacks['after_error_correct_red'] = bitarray
+wc_attacks['wc_new_detected'] = bool
+"""

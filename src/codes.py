@@ -54,8 +54,8 @@ def int2bitarray(x: int, l = 10) -> bitarray:
     x_str = ('{0:0' + str(l) + 'b}').format(x)  # integer to binary string
     return bitarray(x_str)
 
-def get_red(x:bitarray,r:int) -> bitarray:
-    return x[len(x)-1-r:len(x)-1]
+
+
 
 
 class Code(ABC):
@@ -110,6 +110,12 @@ class Code(ABC):
 
     def is_faulty(self, x: bitarray) -> bool:
         return not self.check(x)
+
+    def get_red(self, x: bitarray) -> bitarray:
+        return x[len(x) - self.r:len(x)]
+
+    def get_data(self, x: bitarray) -> bitarray:
+        return x[:len(x) - self.r]
 
 
 class QS(Code):
@@ -254,7 +260,7 @@ class ADR(Code):
         """to make it data:addr
         the func should get data and address and is implementing the following formula:
         (x^3+x) * y   =>   (data^3+data) * addr """
-        splited_data = [None] * (math.ceil(len(data) / self.r))
+        splited_data = [None] * (math.ceil(len(addr) / self.r))
         r = self.r
         data_int: int
         adr_int: int
@@ -309,6 +315,17 @@ class CPC(Code):
             last_k += c.k
             w = self.F.Add(w, redundancy)
         return int2bitarray(w, self.r)
+
+    def encode(self, x: bitarray) -> bitarray:
+        w = 0
+        last_k = 0
+        for c in self._code_list:
+            redundancy = c.encode(x[last_k:last_k + c.k])
+            redundancy = int(redundancy.to01(), 2)
+            last_k += c.k
+            w = self.F.Add(w, redundancy)
+        return int2bitarray(w, self.r)
+
 
 
 # test helpers:

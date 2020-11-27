@@ -9,7 +9,9 @@ import pandas as pd
 import numpy as np
 from progress.bar import Bar, IncrementalBar
 import sys
+import random
 pd.options.mode.chained_assignment = None  # default='warn'
+
 
 def main():
     pd.options.display.max_rows = 999999
@@ -78,13 +80,16 @@ def main():
                     bin_write_address = code.int2bitarray(int(shift_attacks['original_address'][x]), 10)
                     
                     ####### Gilad! ########
-                    bin_data = chip.get_data(shift_attacks['write_data'][x])
+                    #bin_data = chip.get_data(shift_attacks['write_data'][x])
                     
                     #randomize the data and rewrite it in the DB
-                    bin_data = np.random.randint(2, size=len(bin_data))                    
+                    #bin_data = np.random.randint(2, size=chip.k) #type problem
+                    bin_data = code.int2bitarray(random.randint(1, 2**(chip.k)), chip.k)
                     #calculate the new redundancy
                     bin_red = chip.encode(bin_data)
                     shift_attacks['write_data'][x] = bin_data + bin_red
+                    #for the good order we opdate the read_data as well
+                    shift_attacks['read_data'][x] = bin_data + bin_red
                     ####### Gilad Out! ####
 
                     coded_write_red_address = address_decoder.encode(bin_data, bin_write_address)
@@ -111,11 +116,11 @@ def main():
                     #I think this is wrong?
                     shift_attacks['full_read_word'][x] = bin_read_address + bin_data + bin_red
                     #and this is right?
-                    shift_attacks['full_read_word'][x] = bin_full_read_word
+                    #shift_attacks['read_new_full_word'][x] = bin_full_read_word
                     ####### Gilad Out! ####
 
                     shift_attacks['read_new_calculated_ad_red'][x] = coded_read_red_address
-                    shift_attacks['read_new_full_word'][x] = bin_read_address + bin_data + coded_write_red
+                    shift_attacks['read_new_full_word'][x] = bin_full_read_word
                     # coded full word
                     shift_attacks['read_calculated_red'][x] = coded_read_red
                     shift_attacks['write_calculated_red'][x] = coded_write_red
@@ -127,7 +132,7 @@ def main():
             shift_attacks.to_csv(f'..\\results\\cpc {report.cpc_number}-' + "shifted_XORED_csv.csv")
 
             # wc attacks
-            wc_attacks = report.attacks[report.attacks['wc candidate'] == True]
+            wc_attacks = report.attacks[report.attacks['wc fault'] == True]
             wc_result = {'True': 0, 'False': 0}
 
             wc_attacks['full_old_write_word'] = bitarray
@@ -150,68 +155,74 @@ def main():
 
             wc_attacks['after_error_ADR_red'] = bitarray
             wc_attacks['after_error_correct_red'] = bitarray
+            wc_attacks['wc_old_detected'] = bool
             wc_attacks['wc_new_detected'] = bool
-            with Bar(f"wc {report.cpc_number}:", max=len(wc_attacks.index)) as bar:
-                for x in wc_attacks.index:
-                    # collect and pring read data
-                    err_vec = wc_attacks['err_vec'][x] #geting the error vectore
-                    #new coded of the oiginal write
-                    bin_address = code.int2bitarray(int(wc_attacks['address'][x]), 10)
+            #with Bar(f"wc {report.cpc_number}:", max=len(wc_attacks.index)) as bar:
+            for x in wc_attacks.index:
+                # collect and pring read data
+                err_vec = wc_attacks['err_vec'][x] #geting the error vectore
+                #new coded of the oiginal write
+                bin_address = code.int2bitarray(int(wc_attacks['address'][x]), 10)
 
-                    bin_write_data = chip.get_data(wc_attacks['write_data'][x])
-                    ####### Gilad! ########
-                    #randomize the data and update the DB
-                    bin_write_data              = np.random.randint(2, size=len(bin_write_data))
-                    bin_original_red            = chip.encode(bin_write_data)
-                    wc_attacks['write_data'][x] = bin_write_data + bin_original_red
-                    ####### Gilad out! ####
-                    
-                    write_ADR_red = address_decoder.encode(bin_write_data,bin_address)
-                    new_write_red_with_ADR = write_ADR_red ^ bin_original_red
-                    new_with_ADR_write_word = bin_write_data + new_write_red_with_ADR
-                    full_new_write_word = bin_address + new_with_ADR_write_word
+                bin_write_data = chip.get_data(wc_attacks['write_data'][x])
+                ####### Gilad! ########
+                #randomize the data and update the DB
+                #chip.k correction
+                #bin_write_data              = np.random.randint(2, size=len(bin_write_data))
+                bin_write_data = code.int2bitarray(random.randint(1,2**chip.k),chip.k)
+                bin_original_red            = chip.encode(bin_write_data)
+                wc_attacks['write_data'][x] = bin_write_data + bin_original_red
+                print('chip.k:',chip.k,'\ndata:',bin_write_data,'\nred:',bin_original_red,'\nerr_vec:',err_vec)
+                wc_attacks['read_data'][x] = (bin_write_data + bin_original_red) ^ err_vec
+                ####### Gilad out! ####
 
-                    wc_attacks['full_old_write_word'][x] = bin_address+bin_write_data+bin_original_red
-                    wc_attacks['write_address'][x] = bin_address
-                    wc_attacks['write_red'][x] = bin_original_red
-                    wc_attacks['write_ad_red'][x] = write_ADR_red
-                    wc_attacks['write_red_with_ADR'][x] = new_write_red_with_ADR
-                    wc_attacks['full_new_write_word'][x] = full_new_write_word
+                write_ADR_red = address_decoder.encode(bin_write_data,bin_address)
+                new_write_red_with_ADR = write_ADR_red ^ bin_original_red
+                new_with_ADR_write_word = bin_write_data + new_write_red_with_ADR
+                full_new_write_word = bin_address + new_with_ADR_write_word
 
-                    #the read side
-                    wc_attacks['full_old_read_word'][x] = bin_address+wc_attacks['read_data'][x]
-                    wc_attacks['read_red'][x] = chip.get_red(wc_attacks['read_data'][x])
-                    bin_read_data = new_with_ADR_write_word ^ err_vec #the error is on the data and red
-                    bin_read_red = chip.get_red(bin_read_data)
-                    read_ADR_red = address_decoder.encode(chip.get_data(bin_read_data),bin_address)
-                    coded_red_after_err = chip.encode(chip.get_data(bin_read_data))
-                    new_red_after_err = read_ADR_red ^coded_red_after_err
+                wc_attacks['full_old_write_word'][x] = bin_address+bin_write_data+bin_original_red
+                wc_attacks['write_address'][x] = bin_address
+                wc_attacks['write_red'][x] = bin_original_red
+                wc_attacks['write_ad_red'][x] = write_ADR_red
+                wc_attacks['write_red_with_ADR'][x] = new_write_red_with_ADR
+                wc_attacks['full_new_write_word'][x] = full_new_write_word
 
-                    wc_attacks['full_new_read_word'][x] = bin_address+bin_read_data
-                    wc_attacks['new_read_red'][x] =  bin_read_red
+                #the read side
+                wc_attacks['full_old_read_word'][x] = bin_address+wc_attacks['read_data'][x]
+                wc_attacks['read_red'][x] = chip.get_red(wc_attacks['read_data'][x])
+                bin_read_data = new_with_ADR_write_word ^ err_vec #the error is on the data and red
+                bin_read_red = chip.get_red(bin_read_data)
+                read_ADR_red = address_decoder.encode(chip.get_data(bin_read_data),bin_address)
+                coded_red_after_err = chip.encode(chip.get_data(bin_read_data))
+                new_red_after_err = read_ADR_red ^coded_red_after_err
 
-                    wc_attacks['calculated_address_read_red'][x] = read_ADR_red
-                    wc_attacks['calculated_data_read_red'][x] = coded_red_after_err
-                    wc_attacks['calculated_total_red'][x] = new_red_after_err
+                wc_attacks['full_new_read_word'][x] = bin_address+bin_read_data
+                wc_attacks['new_read_red'][x] = bin_read_red
 
-                    wc_attacks['after_error_ADR_red'][x] = bin_read_red
-                    wc_attacks['after_error_correct_red'][x] = new_red_after_err
+                wc_attacks['calculated_address_read_red'][x] = read_ADR_red
+                wc_attacks['calculated_data_read_red'][x] = coded_red_after_err
+                wc_attacks['calculated_total_red'][x] = new_red_after_err
 
-                    ####### Gilad! ########
-                    #check if the error would be detected by the old encoding
-                    flag = (wc_attacks['read_red'][x] == chip.encode(bin_read_data))
-                    wc_attacks['wc_old_detected'][x] = not flag
-                    ####### Gilad out #####
-                    # check success
-                    flag = (new_red_after_err == bin_read_red)
-                    wc_attacks['wc_new_detected'][x] = not flag
-                    wc_result[str(flag)] += 1
-                    bar.next()
+                wc_attacks['after_error_ADR_red'][x] = bin_read_red
+                wc_attacks['after_error_correct_red'][x] = new_red_after_err
+
+                ####### Gilad! ########
+                #check if the error would be detected by the old encoding
+                flag = (wc_attacks['read_red'][x] == chip.encode(bin_read_data))
+                wc_attacks['wc_old_detected'][x] = not flag
+                ####### Gilad out #####
+                # check success
+                flag = (new_red_after_err == bin_read_red)
+                wc_attacks['wc_new_detected'][x] = not flag
+                wc_result[str(flag)] += 1
+                    #bar.next()
             wc_attacks.to_csv(f'..\\results\\cpc {report.cpc_number}-' + "wc_new_XORED_csv.csv")
+
         except:
             print(f'problem with cpc{cpc}')
-
-
+            e = sys.exc_info()[0]
+            print("<p>Error: %s</p>" % e)
     # Todo: to add the ADR codec to the pacific.py file ?!?
     # Todo: to make a write vectore with the original addresses. to split fields so we have the data and the redundencies
     # to code the address using ADR and => to XOR with the redundancies bits

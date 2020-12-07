@@ -16,7 +16,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 def main():
     pd.options.display.max_rows = 999999
     newlogs = datetime(2020, 7, 1)
-    june_logs = datetime(2020, 7, 19)
+    june_logs = datetime(2020, 8, 30)
     sort_by = [(['P(wc fault)', '#wc'], [False, False],
                 10)]  # [('unique error vectors', False, 3), ('#wc', False, 3), ('P(wc fault)', False, 3), ('P(masking | wc fault)', True, 3)]
     # report_attacks = [None]*10
@@ -33,7 +33,7 @@ def main():
                               , wd_consistent_threshold=0.5)
 
             report.set_sortby(sortby=sort_by)
-            report.fetch_files(parse_pickles=True, to_datetime=newlogs, max_files=None)
+            report.fetch_files(parse_pickles=True, to_datetime=june_logs, max_files=None)
             # report.generate_report(general_report=True, specifics_report=12)#making a report
             # report_attacks.append(report.attacks)#appending rows
             address_decoder = code.ADR(report.cpc.k, report.cpc.r)
@@ -84,7 +84,7 @@ def main():
                     
                     #randomize the data and rewrite it in the DB
                     #bin_data = np.random.randint(2, size=chip.k) #type problem
-                    bin_data = code.int2bitarray(random.randint(1, 2**(chip.k)), chip.k)
+                    bin_data = code.int2bitarray(random.randint(1, 2**(chip.k)-1), chip.k)
                     #calculate the new redundancy
                     bin_red = chip.encode(bin_data)
                     shift_attacks['write_data'][x] = bin_data + bin_red
@@ -169,7 +169,7 @@ def main():
                 #randomize the data and update the DB
                 #chip.k correction
                 #bin_write_data              = np.random.randint(2, size=len(bin_write_data))
-                bin_write_data = code.int2bitarray(random.randint(1,2**chip.k),chip.k)
+                bin_write_data = code.int2bitarray(random.randint(1,2**chip.k-1),chip.k)
                 bin_original_red            = chip.encode(bin_write_data)
                 wc_attacks['write_data'][x] = bin_write_data + bin_original_red
                 print('chip.k:',chip.k,'\ndata:',bin_write_data,'\nred:',bin_original_red,'\nerr_vec:',err_vec)

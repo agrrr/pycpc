@@ -54,6 +54,11 @@ def int2bitarray(x: int, l = 10) -> bitarray:
     x_str = ('{0:0' + str(l) + 'b}').format(x)  # integer to binary string
     return bitarray(x_str)
 
+def str2bitarray(s:str) ->bitarray:
+    s= s.rstrip('bitarray(').strip('frozenbitarray(').strip(')').strip("'").strip('"')
+    return bitarray(s)
+
+
 
 
 
